@@ -1,0 +1,44 @@
+{
+  "synthetic": true,
+  "as_of": "2026-10-01T00:00:00+00:00",
+  "seeds": {
+    "athletes": 7,
+    "opportunities": 42
+  },
+  "counts": {
+    "athletes": 200,
+    "opportunities": 300,
+    "organisations": 15,
+    "posts": 50,
+    "relevance_labels": 60000
+  },
+  "athletes_by_sport": {
+    "football": 36,
+    "cricket": 45,
+    "basketball": 39,
+    "athletics": 43,
+    "badminton": 37
+  },
+  "opportunities_by_sport": {
+    "football": 60,
+    "cricket": 60,
+    "basketball": 60,
+    "athletics": 60,
+    "badminton": 60
+  },
+  "opportunities_by_type": {
+    "trial": 29,
+    "scouting": 56,
+    "tournament": 51,
+    "development": 37,
+    "camp": 51,
+    "scholarship": 48,
+    "club": 28
+  },
+  "pair_grades": {
+    "3": 85,
+    "1": 1919,
+    "0": 57362,
+    "2": 634
+  }
+}

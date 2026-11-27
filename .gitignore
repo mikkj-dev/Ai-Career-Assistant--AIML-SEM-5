@@ -5,3 +5,5 @@
 .pytest_cache/
 node_modules/
 .next/
+**/.models/
+**/pytest-cache-files-*/

@@ -15,28 +15,39 @@ from app.models import User
 bearer = HTTPBearer(auto_error=False)
 
 
-def issue_token(user: User) -> str:
-    exp = datetime.now(UTC) + timedelta(days=settings.jwt_ttl_days)
-    return jwt.encode({"sub": str(user.id), "exp": exp}, settings.jwt_secret, algorithm="HS256")
+def issue_token(user: User, *, demo=False) -> str:
+    expires = datetime.now(UTC) + timedelta(days=settings.jwt_ttl_days)
+    return jwt.encode({"sub": str(user.id), "exp": expires, "demo": demo}, settings.jwt_secret, algorithm="HS256")
 
 
 def verify_google(credential: str) -> dict:
     if not settings.google_client_id:
-        raise HTTPException(503, "Google sign-in not configured")
+        raise HTTPException(503, "Google sign-in is unavailable")
     try:
         return id_token.verify_oauth2_token(credential, google_requests.Request(), settings.google_client_id)
-    except ValueError:
-        raise HTTPException(401, "Invalid Google token")
+    except ValueError as exc:
+        raise HTTPException(401, "Invalid Google token") from exc
 
 
-def current_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer), db: Session = Depends(get_db)) -> User:
-    if not creds:
-        raise HTTPException(401, "Not signed in")
+def optional_user(creds: HTTPAuthorizationCredentials | None = Depends(bearer),
+                  db: Session = Depends(get_db)) -> User | None:
+    if creds is None:
+        return None
     try:
-        sub = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"])["sub"]
-    except jwt.PyJWTError:
-        raise HTTPException(401, "Invalid or expired token")
-    user = db.get(User, UUID(sub))
-    if not user:
-        raise HTTPException(401, "User not found")
+        claims = jwt.decode(creds.credentials, settings.jwt_secret, algorithms=["HS256"],
+                            options={"require": ["exp", "sub"]})
+        identifier = UUID(claims["sub"])
+    except (jwt.PyJWTError, ValueError) as exc:
+        raise HTTPException(401, "Invalid or expired token") from exc
+    if claims.get("demo") and not settings.local_demo:
+        raise HTTPException(401, "Local demo session is unavailable")
+    user = db.get(User, identifier)
+    if user is None or bool(claims.get("demo")) != user.synthetic:
+        raise HTTPException(401, "User session is unavailable")
+    return user
+
+
+def current_user(user: User | None = Depends(optional_user)) -> User:
+    if user is None:
+        raise HTTPException(401, "Not signed in")
     return user

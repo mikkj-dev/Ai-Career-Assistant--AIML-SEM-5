@@ -1,0 +1,16 @@
+organisation_id,name,sport,city,region,synthetic
+o001,Juniperline Eleven Collective,football,Delhi,North,true
+o002,Asterbank Eleven Collective,football,Pune,West,true
+o003,Kestrelbend Eleven Collective,football,Kochi,South,true
+o004,Juniperline Wickets Collective,cricket,Delhi,North,true
+o005,Asterbank Wickets Collective,cricket,Pune,West,true
+o006,Kestrelbend Wickets Collective,cricket,Kochi,South,true
+o007,Juniperline Courts Collective,basketball,Delhi,North,true
+o008,Asterbank Courts Collective,basketball,Pune,West,true
+o009,Kestrelbend Courts Collective,basketball,Kochi,South,true
+o010,Juniperline Track Collective,athletics,Delhi,North,true
+o011,Asterbank Track Collective,athletics,Pune,West,true
+o012,Kestrelbend Track Collective,athletics,Kochi,South,true
+o013,Juniperline Shuttles Collective,badminton,Delhi,North,true
+o014,Asterbank Shuttles Collective,badminton,Pune,West,true
+o015,Kestrelbend Shuttles Collective,badminton,Kochi,South,true

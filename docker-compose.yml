@@ -1,5 +1,3 @@
-# Local dev: Postgres + API in Linux containers (Windows Smart App Control blocks psycopg/sklearn DLLs on host).
-# Web runs on host: cd web && npm run dev
 services:
   db:
     image: postgres:17-alpine
@@ -7,22 +5,37 @@ services:
       POSTGRES_USER: groundup
       POSTGRES_PASSWORD: groundup
       POSTGRES_DB: groundup
-    ports: ["5433:5432"] # 5433 on host to avoid clashing with other local Postgres
-    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["127.0.0.1:${GROUNDUP_DB_PORT:-5433}:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "groundup"]
+      test: ["CMD-SHELL", "pg_isready -U groundup -d groundup"]
       interval: 2s
-      retries: 20
+      timeout: 3s
+      retries: 30
   api:
-    build: ./api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: development
     environment:
+      ENV: development
+      DEMO_ENABLED: "true"
       DATABASE_URL: postgresql://groundup:groundup@db:5432/groundup
-      CORS_ORIGINS: http://localhost:3000
+      JWT_SECRET: ${GROUNDUP_DEV_JWT_SECRET:-dev-only-groundup-signing-key-rotate-in-production}
+      CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
-    ports: ["8001:8000"] # 8001 on host; 8000 often taken
-    volumes: ["./api:/app", "/app/.venv"]
+    ports: ["127.0.0.1:${GROUNDUP_API_PORT:-8001}:8000"]
+    volumes:
+      - ./data:/project/data
+      - ./evaluation:/project/evaluation
     depends_on:
-      db: { condition: service_healthy }
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/ready', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
 volumes:
   pgdata:

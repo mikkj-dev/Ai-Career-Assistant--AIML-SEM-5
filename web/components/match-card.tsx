@@ -1,19 +1,20 @@
 import { CalendarBlank, MapPin } from "@phosphor-icons/react";
+import Link from "next/link";
 import type { Match } from "@/lib/api";
 
 export function ScoreRing({ score, size = 56, track = "stroke-line" }: { score: number; size?: number; track?: string }) {
   const r = size / 2 - 4;
   const c = 2 * Math.PI * r;
   return (
-    <div className="relative shrink-0" style={{ width: size, height: size }} aria-label={`Match score ${score} out of 100`}>
-      <svg width={size} height={size} className="-rotate-90">
+    <div role="img" className="relative shrink-0" style={{ width: size, height: size }} aria-label={`Match score ${score} out of 100`}>
+      <svg aria-hidden width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={4} className={track} />
         <circle
           cx={size / 2} cy={size / 2} r={r} fill="none" strokeWidth={4} strokeLinecap="round"
           className="stroke-accent" strokeDasharray={c} strokeDashoffset={c * (1 - score / 100)}
         />
       </svg>
-      <span className="absolute inset-0 grid place-items-center font-mono text-sm font-semibold">{Math.round(score)}</span>
+      <span className={`absolute inset-0 grid place-items-center font-mono font-semibold ${size < 50 ? "text-xs" : "text-sm"}`}>{score.toFixed(1)}</span>
     </div>
   );
 }
@@ -27,7 +28,7 @@ export function MatchCard({ match, compact = false }: { match: Match; compact?: 
     <article className={compact ? "flex gap-3 py-3" : "panel flex gap-5 p-5"}>
       <ScoreRing score={match.score} size={compact ? 44 : 56} />
       <div className="min-w-0 flex-1">
-        <h3 className="truncate font-medium">{o.title}</h3>
+        <h3 className="font-medium"><Link href={`/opportunities/${o.id}`} className="hover:underline">{o.title}</Link></h3>
         <p className="text-sm text-muted">{o.org}</p>
         {!compact && (
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">

@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { IdentificationCard, ShieldCheck } from "@phosphor-icons/react";
 import { post } from "@/lib/api";
 
@@ -11,6 +13,7 @@ const DOCS = [
 ];
 
 export default function VerifyPage() {
+  const router = useRouter();
   const [doc, setDoc] = useState("aadhaar");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +22,7 @@ export default function VerifyPage() {
     setBusy(true);
     try {
       await post("/me/verification", { doc_type: doc });
-      location.href = "/onboarding/profile";
+      router.push("/onboarding/profile");
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
@@ -29,9 +32,9 @@ export default function VerifyPage() {
   return (
     <>
       <p className="text-sm text-muted">Step 1 of 2</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Verify your identity</h1>
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Request an identity check</h1>
       <p className="mt-2 max-w-[60ch] text-muted">
-        Verified profiles keep the network genuine for scouts and teams. We store the document type and status only, never your ID number.
+        Choose the document type you would use for a future check. This form stores only the type and request status.
       </p>
 
       <fieldset className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -50,13 +53,13 @@ export default function VerifyPage() {
 
       <div className="mt-6 flex items-start gap-3 rounded-2xl border border-dashed border-line p-4 text-sm text-muted">
         <ShieldCheck size={20} className="mt-0.5 shrink-0 text-accent" />
-        Document upload and automatic checks arrive with our KYC partner. For now your request is marked pending review.
+        Submitting this form records a pending request. Identity checks are unavailable in this version.
       </div>
 
       {error && <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
       <div className="mt-8 flex gap-3">
         <button className="btn-primary" onClick={submit} disabled={busy}>Submit for review</button>
-        <a href="/onboarding/profile" className="btn-ghost">Skip for now</a>
+        <Link href="/onboarding/profile" className="btn-ghost">Skip for now</Link>
       </div>
     </>
   );

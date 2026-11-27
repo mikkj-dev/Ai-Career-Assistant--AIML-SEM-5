@@ -1,0 +1,31 @@
+import { expect, test } from "@playwright/test";
+import { capture, signIn } from "./demo";
+
+test("mobile account switching, empty state, filters and detail fit the viewport", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await signIn(page, "Athlete with no eligible opportunities", "/");
+  await page.getByRole("link", { name: "Opportunities", exact: true }).tap();
+  await expect(page.getByText("No matches yet")).toBeVisible();
+  await page.getByRole("link", { name: "Browse opportunities" }).tap();
+  await page.getByLabel("Sport", { exact: true }).selectOption("badminton");
+  await page.getByLabel("Type", { exact: true }).selectOption("camp");
+  await expect(page.getByRole("link", { name: /Badminton training camp/ }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Sign out" }).tap();
+  await signIn(page, "Cricket athlete", "/");
+  await page.getByRole("link", { name: "Opportunities", exact: true }).tap();
+  await expect(page.getByRole("heading", { name: "Opportunities for you" })).toBeVisible();
+  await page.getByRole("tab", { name: "Tournament", exact: true }).tap();
+  const card = page.getByRole("button", { name: /Cricket tournament.*Open details/ }).first();
+  await expect(card).toBeVisible();
+  await card.tap();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("region", { name: "Score breakdown" })).toBeAttached();
+  await expect(dialog.getByRole("button", { name: "Apply", exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await capture(page, "mobile-opportunity-detail.png");
+  await dialog.getByRole("button", { name: "Close", exact: true }).tap();
+  await expect(dialog).toBeHidden();
+  expect(errors).toEqual([]);
+});

@@ -1,28 +1,25 @@
 "use client";
 import { useState } from "react";
-import { post, type User } from "@/lib/api";
+import Link from "next/link";
+import { post, type Catalog, type User } from "@/lib/api";
 import { useApi } from "@/lib/use-api";
 
-const SPORTS: Record<string, string[]> = {
-  football: ["goalkeeper", "centre back", "full back", "defensive midfielder", "central midfielder", "attacking midfielder", "winger", "striker"],
-  cricket: ["batter", "bowler", "all rounder", "wicket keeper"],
-  basketball: ["point guard", "shooting guard", "small forward", "power forward", "center"],
-  athletics: ["sprinter", "hurdler", "middle distance", "long jumper", "thrower"],
-};
 const REGIONS = ["North", "South", "East", "West", "Central", "North East"];
-const LEVELS = ["beginner", "district", "state", "national", "professional"];
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 
 export default function ProfilePage() {
-  const { data: me, loading } = useApi<User>("/me");
-  if (loading || !me) return <div className="h-96 animate-pulse rounded-2xl bg-surface" />;
-  return <ProfileForm me={me} />;
+  const me = useApi<User>("/me");
+  const catalog = useApi<Catalog>("/catalog");
+  if (me.error || catalog.error) return <p role="alert" className="text-sm text-red-600">{me.error ?? catalog.error}</p>;
+  if (!me.data || !catalog.data) return <p role="status" className="panel p-5 text-muted">Loading your profile…</p>;
+  if (me.data.role !== "athlete") return <Link className="btn-ghost" href="/organisation">Back to organisation</Link>;
+  return <ProfileForm me={me.data} catalog={catalog.data} />;
 }
 
-function ProfileForm({ me }: { me: User }) {
+function ProfileForm({ me, catalog }: { me: User; catalog: Catalog }) {
   const p = me.profile;
   const [mode, setMode] = useState(me.mode);
-  const [sport, setSport] = useState(p?.sport ?? "football");
+  const [sport, setSport] = useState(p?.sport && catalog.sports[p.sport] ? p.sport : "football");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +27,7 @@ function ProfileForm({ me }: { me: User }) {
     e.preventDefault();
     const f = Object.fromEntries(new FormData(e.currentTarget)) as Record<string, string>;
     setBusy(true);
+    setError(null);
     try {
       await post("/me/profile", {
         ...f,
@@ -38,7 +36,7 @@ function ProfileForm({ me }: { me: User }) {
         age: f.age ? Number(f.age) : null,
         skills: f.skills.split(",").map((s) => s.trim()).filter(Boolean),
       }, "PUT");
-      location.href = "/";
+      location.assign(p?.sport ? "/opportunities" : "/");
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -47,8 +45,8 @@ function ProfileForm({ me }: { me: User }) {
 
   return (
     <>
-      <p className="text-sm text-muted">Step 2 of 2</p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight">Set up your profile</h1>
+      {!p?.sport && !me.synthetic && <p className="text-sm text-muted">Step 2 of 2</p>}
+      <h1 className="mt-1 text-3xl font-semibold tracking-tight">{p?.sport ? "Edit athlete profile" : "Set up your profile"}</h1>
       <p className="mt-2 text-muted">These fields drive your opportunity matches. You can change them later.</p>
 
       <form onSubmit={submit} className="mt-8 flex flex-col gap-6">
@@ -76,18 +74,19 @@ function ProfileForm({ me }: { me: User }) {
         <div className="grid gap-6 sm:grid-cols-2">
           <Field label="Sport">
             <select className="field" value={sport} onChange={(e) => setSport(e.target.value)}>
-              {Object.keys(SPORTS).map((s) => <option key={s} value={s}>{cap(s)}</option>)}
+              {Object.keys(catalog.sports).map((s) => <option key={s} value={s}>{cap(s)}</option>)}
             </select>
           </Field>
           <Field label="Position">
-            <select name="position" className="field" defaultValue={p?.position ?? ""} key={sport}>
-              {SPORTS[sport].map((s) => <option key={s} value={s}>{cap(s)}</option>)}
+            <select name="position" className="field" defaultValue={p?.sport === sport ? p?.position ?? "" : ""} key={sport} required>
+              <option value="">Choose position</option>
+              {catalog.sports[sport].map((s) => <option key={s} value={s}>{cap(s)}</option>)}
             </select>
           </Field>
           <Field label="Age"><input name="age" type="number" min={8} max={60} required defaultValue={p?.age ?? ""} className="field" /></Field>
           <Field label="Level">
             <select name="level" className="field" defaultValue={p?.level ?? "district"}>
-              {LEVELS.map((l) => <option key={l} value={l}>{cap(l)}</option>)}
+              {catalog.levels.map((l) => <option key={l} value={l}>{cap(l)}</option>)}
             </select>
           </Field>
           <Field label="City"><input name="city" required defaultValue={p?.city ?? ""} className="field" /></Field>
@@ -107,7 +106,10 @@ function ProfileForm({ me }: { me: User }) {
         <Field label="Bio"><textarea name="bio" rows={3} defaultValue={p?.bio ?? ""} className="field" /></Field>
 
         {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-        <button className="btn-primary self-start" disabled={busy}>Save profile</button>
+        <div className="flex flex-wrap gap-3">
+          <button className="btn-primary" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button>
+          <Link className="btn-ghost" href={p?.sport ? "/opportunities" : "/login"}>Cancel</Link>
+        </div>
       </form>
     </>
   );

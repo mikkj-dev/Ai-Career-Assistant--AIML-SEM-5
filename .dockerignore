@@ -1,0 +1,13 @@
+**
+!api/
+!api/**
+!evaluation/
+!evaluation/results.json
+!evaluation/plots/
+!evaluation/plots/*.png
+api/.venv
+api/.models
+api/.env
+api/**/__pycache__
+api/.pytest_cache
+api/pytest-cache-files-*

@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import ARRAY, ForeignKey, Index, String, Text, func
+from sqlalchemy import ARRAY, ForeignKey, Index, String, Text, UniqueConstraint, false, func, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -18,6 +18,8 @@ class User(Base):
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     role: Mapped[str] = mapped_column(String(20), default="athlete")  # athlete | coach | scout | team
     mode: Mapped[str] = mapped_column(String(20), default="casual")  # professional | casual
+    synthetic: Mapped[bool] = mapped_column(default=False, server_default=false())
+    organisation_name: Mapped[str | None] = mapped_column(String(120))
     # Only the document type and status are kept. Never store ID numbers (Aadhaar Act s.29).
     verification_doc: Mapped[str | None] = mapped_column(String(30))
     verification_status: Mapped[str] = mapped_column(String(20), default="unverified")  # unverified|pending|verified|rejected
@@ -60,6 +62,7 @@ class Opportunity(Base):
     description: Mapped[str | None] = mapped_column(Text)
     deadline: Mapped[datetime | None]
     synthetic: Mapped[bool] = mapped_column(default=False)  # report: real and synthetic data kept labelled
+    hard_age_limit: Mapped[bool] = mapped_column(default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
     __table_args__ = (Index("ix_opp_sport_created", "sport", "created_at"),)
@@ -70,5 +73,19 @@ class Post(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     body: Mapped[str] = mapped_column(Text)
+    synthetic: Mapped[bool] = mapped_column(default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(server_default=func.now(), index=True)
     author: Mapped[User] = relationship(lazy="joined")
+
+
+class Application(Base):
+    __tablename__ = "applications"
+    __table_args__ = (UniqueConstraint("athlete_id", "opportunity_id", name="uq_application_athlete_opportunity"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    athlete_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    opportunity_id: Mapped[UUID] = mapped_column(ForeignKey("opportunities.id", ondelete="CASCADE"), index=True)
+    status: Mapped[str] = mapped_column(String(24), default="submitted", server_default="submitted")
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    athlete: Mapped[User] = relationship()
+    opportunity: Mapped[Opportunity] = relationship()

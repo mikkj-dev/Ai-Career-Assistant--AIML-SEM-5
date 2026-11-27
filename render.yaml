@@ -3,8 +3,8 @@ services:
   - type: web
     name: groundup-api
     runtime: docker
-    rootDir: api
-    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerfilePath: ./api/Dockerfile
     plan: free
     region: singapore
     healthCheckPath: /health
@@ -12,6 +12,8 @@ services:
     envVars:
       - key: ENV
         value: production
+      - key: DEMO_ENABLED
+        value: "false"
       - key: DATABASE_URL # Neon pooled connection string (-pooler host, sslmode=require)
         sync: false
       - key: JWT_SECRET

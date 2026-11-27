@@ -1,25 +1,24 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AnimatePresence, MotionConfig, motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring, useTransform,
 } from "motion/react";
 import { CalendarBlank, Lightning, MapPin, Target, UsersThree, X } from "@phosphor-icons/react";
-import type { Match, Opportunity } from "@/lib/api";
+import { eligibilityLabel, type Match, type Opportunity } from "@/lib/api";
+import { ApplicationAction } from "./application-action";
 import { ScoreRing } from "./match-card";
 
 const SPRING = { type: "spring", stiffness: 260, damping: 32 } as const;
-const TYPES = ["all", "trial", "scholarship", "tournament", "camp"] as const;
+const TYPES = ["all", "trial", "scholarship", "tournament", "camp", "scouting", "club", "development"] as const;
 const LABELS: Record<string, string> = { position: "Position", skills: "Skills", age: "Age", location: "Location", experience: "Level", goals: "Goals" };
 
-// ponytail: picsum placeholder, seeded per opportunity. Swap for org-uploaded or generated sport imagery (S3) later.
-const img = (o: Opportunity, w = 900, h = 1100) => `https://picsum.photos/seed/gu-${o.id}/${w}/${h}?grayscale`;
-// Deterministic on-palette gradient per opportunity: shows while the photo loads and if it fails.
+// Deterministic local background preserves the gallery's glass and tilt effects offline.
 const tone = (o: Opportunity) => {
   const h = [...o.id].reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7);
   const hue = 150 + (Math.abs(h) % 50); // green to teal
-  return `linear-gradient(140deg, hsl(${hue} 55% 22%), hsl(${hue + 25} 45% 9%))`;
+  return `radial-gradient(ellipse at 72% 12%, hsl(${hue} 51% 31%), transparent 65%), repeating-linear-gradient(135deg, transparent 0 40px, #ffffff0f 41px 42px), linear-gradient(140deg, hsl(${hue} 55% 22%), hsl(${hue + 25} 45% 9%))`;
 };
-const hideBroken = (e: React.SyntheticEvent<HTMLImageElement>) => { e.currentTarget.style.display = "none"; };
 const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
 const date = (d: string | null) => (d ? new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : null);
 
@@ -27,11 +26,16 @@ export function OpportunityGallery({ matches }: { matches: Match[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [type, setType] = useState<(typeof TYPES)[number]>("all");
   const [sort, setSort] = useState<"score" | "deadline">("score");
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   const shown = useMemo(() => {
     const list = matches.filter((m) => type === "all" || m.opportunity.type === type);
     if (sort === "deadline") {
-      return [...list].sort((a, b) => (a.opportunity.deadline ?? "9").localeCompare(b.opportunity.deadline ?? "9"));
+      return [...list].sort((a, b) => {
+        const aDate = a.opportunity.deadline ? Date.parse(a.opportunity.deadline) : Infinity;
+        const bDate = b.opportunity.deadline ? Date.parse(b.opportunity.deadline) : Infinity;
+        return aDate - bDate || a.opportunity.id.localeCompare(b.opportunity.id);
+      });
     }
     return list;
   }, [matches, type, sort]);
@@ -39,13 +43,27 @@ export function OpportunityGallery({ matches }: { matches: Match[] }) {
 
   useEffect(() => {
     if (!openId) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenId(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenId(null);
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const nodes = dialogRef.current.querySelectorAll<HTMLElement>("a[href], button:not(:disabled)");
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last?.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first?.focus();
+      }
+    };
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     document.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       document.removeEventListener("keydown", onKey);
+      requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-opportunity-id="${openId}"]`)?.focus());
     };
   }, [openId]);
 
@@ -106,7 +124,7 @@ export function OpportunityGallery({ matches }: { matches: Match[] }) {
         <p className="panel mt-4 p-8 text-center text-sm text-muted">No {type} opportunities match your profile right now.</p>
       )}
 
-      <AnimatePresence>{open && <Expanded key={open.opportunity.id} match={open} onClose={() => setOpenId(null)} />}</AnimatePresence>
+      <AnimatePresence>{open && <Expanded key={open.opportunity.id} match={open} dialogRef={dialogRef} onClose={() => setOpenId(null)} />}</AnimatePresence>
     </MotionConfig>
   );
 }
@@ -141,6 +159,7 @@ function TiltCard({ match, featured, onOpen }: { match: Match; featured: boolean
     <div className="h-full" style={{ perspective: 1100 }}>
       <motion.button
         layoutId={`card-${o.id}`}
+        data-opportunity-id={o.id}
         onClick={onOpen}
         onPointerMove={move}
         onPointerLeave={reset}
@@ -148,9 +167,8 @@ function TiltCard({ match, featured, onOpen }: { match: Match; featured: boolean
         whileTap={{ scale: 0.985 }}
         style={{ rotateX, rotateY, borderRadius: 24, background: tone(o) }}
         className="group relative block h-full w-full overflow-hidden text-left shadow-[0_20px_50px_-20px_rgba(4,120,87,0.35)] outline-none focus-visible:ring-4 focus-visible:ring-accent/40"
-        aria-label={`${o.title}, match score ${Math.round(match.score)}. Open details`}
+        aria-label={`${o.title}, match score ${match.score}. Open details`}
       >
-        <motion.img layoutId={`img-${o.id}`} src={img(o)} alt="" onError={hideBroken} className="absolute inset-0 size-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-zinc-950/20 to-emerald-950/10" />
         <motion.div aria-hidden style={{ background: glare }} className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -171,6 +189,7 @@ function TiltCard({ match, featured, onOpen }: { match: Match; featured: boolean
             <span className="flex items-center gap-1"><MapPin size={13} />{o.city ?? "Open / online"}</span>
             {o.deadline && <span className="flex items-center gap-1"><CalendarBlank size={13} />{date(o.deadline)}</span>}
             <span>{cap(o.type)}</span>
+            {match.eligibility === "age_tolerance" && <span className="text-amber-200">Age tolerance</span>}
           </div>
         </div>
       </motion.button>
@@ -178,10 +197,15 @@ function TiltCard({ match, featured, onOpen }: { match: Match; featured: boolean
   );
 }
 
-function Expanded({ match, onClose }: { match: Match; onClose: () => void }) {
+function Expanded({ match, onClose, dialogRef }: {
+  match: Match;
+  onClose: () => void;
+  dialogRef: React.RefObject<HTMLDivElement | null>;
+}) {
   const o = match.opportunity;
   const [headline, ...reasons] = match.reasons;
-  const reveal = {
+  const reduceMotion = useReducedMotion();
+  const reveal = reduceMotion ? { initial: false as const } : {
     initial: { opacity: 0, y: 18 },
     animate: { opacity: 1, y: 0, transition: { ...SPRING, delay: 0.12 } },
     exit: { opacity: 0, transition: { duration: 0.1 } },
@@ -200,25 +224,25 @@ function Expanded({ match, onClose }: { match: Match; onClose: () => void }) {
       />
       <motion.div
         layoutId={`card-${o.id}`}
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`t-${o.id}`}
         style={{ borderRadius: 28 }}
         className="relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden bg-zinc-950 text-white shadow-2xl shadow-black/50"
       >
-        <div className="relative h-52 shrink-0 sm:h-64" style={{ background: tone(o) }}>
-          <motion.img layoutId={`img-${o.id}`} src={img(o)} alt="" onError={hideBroken} className="absolute inset-0 size-full object-cover" />
+        <div className="relative flex min-h-40 shrink-0 items-end pt-14 sm:min-h-64" style={{ background: tone(o) }}>
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/30 to-transparent" />
           <motion.button
             {...reveal}
             autoFocus
             onClick={onClose}
             aria-label="Close"
-            className="glass absolute right-4 top-4 grid size-10 place-items-center rounded-full hover:bg-white/20"
+            className="glass absolute right-4 top-4 z-10 grid size-10 place-items-center rounded-full hover:bg-white/20"
           >
             <X size={18} />
           </motion.button>
-          <div className="absolute inset-x-0 bottom-0 flex items-end gap-5 p-6">
+          <div className="relative flex w-full items-end gap-4 p-4 sm:gap-5 sm:p-6">
             <ScoreRing score={match.score} size={76} track="stroke-white/20" />
             <div className="min-w-0">
               <motion.h2 id={`t-${o.id}`} layoutId={`title-${o.id}`} className="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -233,8 +257,8 @@ function Expanded({ match, onClose }: { match: Match; onClose: () => void }) {
           {/* Soft accent glows behind the panels so the frosted glass has something to refract. */}
           <div aria-hidden className="pointer-events-none absolute -left-10 top-10 size-64 rounded-full bg-emerald-500/30 blur-3xl" />
           <div aria-hidden className="pointer-events-none absolute -right-10 top-72 size-72 rounded-full bg-teal-400/25 blur-3xl" />
-          <div className="relative grid gap-5 p-6 pt-2">
-            <section className="glass rounded-2xl p-5">
+          <div className="relative grid gap-4 p-4 pt-2 sm:gap-5 sm:p-6 sm:pt-2">
+            <section className="glass rounded-2xl p-4 sm:p-5">
               <h3 className="flex items-center gap-2 text-sm font-medium text-emerald-300"><Target size={16} /> {headline}</h3>
               <ul className="mt-3 grid gap-2 text-sm text-white/85 sm:grid-cols-2">
                 {reasons.map((r) => <li key={r} className="flex gap-2"><Lightning size={14} className="mt-0.5 shrink-0 text-emerald-300" />{r}</li>)}
@@ -253,7 +277,8 @@ function Expanded({ match, onClose }: { match: Match; onClose: () => void }) {
             <section className="glass grid gap-4 rounded-2xl p-5 text-sm sm:grid-cols-2">
               <Detail icon={<MapPin size={16} />} label="Location" value={o.city ?? "Open / online"} />
               <Detail icon={<CalendarBlank size={16} />} label="Apply by" value={date(o.deadline) ?? "Rolling"} />
-              <Detail icon={<UsersThree size={16} />} label="Ages" value={o.age_min != null ? `${o.age_min} to ${o.age_max}` : "Any"} />
+              <Detail icon={<UsersThree size={16} />} label="Ages" value={o.age_min == null && o.age_max == null
+                ? "Any" : `${o.age_min ?? "Any minimum"} to ${o.age_max ?? "Any maximum"}`} />
               <Detail icon={<Target size={16} />} label="Level" value={o.level ? cap(o.level) : "Any"} />
               <div className="sm:col-span-2">
                 <p className="text-white/60">Looking for</p>
@@ -266,14 +291,22 @@ function Expanded({ match, onClose }: { match: Match; onClose: () => void }) {
               </div>
             </section>
 
+            <section className="space-y-1 text-sm text-white/80" aria-label="Eligibility and skills">
+              <p className={match.eligibility === "strict" ? "text-emerald-300" : "text-amber-200"}>{eligibilityLabel[match.eligibility]}</p>
+              <p>Matching skills · {match.matching_skills.join(", ") || "None"}</p>
+              <p>Missing skills · {match.missing_skills.join(", ") || "None"}</p>
+              <p>Goals similarity · {match.similarity_method}</p>
+            </section>
+
             {o.description && <p className="max-w-[65ch] leading-relaxed text-white/80">{o.description}</p>}
 
           </div>
         </motion.div>
 
         <motion.footer {...reveal} className="flex shrink-0 flex-wrap items-center gap-3 border-t border-white/10 bg-zinc-950/80 px-6 py-4 backdrop-blur">
-          <button disabled className="btn-primary" title="Applications open in the next release">Apply (coming soon)</button>
+          <ApplicationAction opportunityId={o.id} onDark />
           <button onClick={onClose} className="glass inline-flex h-10 items-center rounded-lg px-4 text-sm transition hover:bg-white/20 active:scale-[0.98]">Back to list</button>
+          <Link href={`/opportunities/${o.id}`} className="text-sm text-white/75 hover:underline">Full details</Link>
           {o.synthetic && <span className="ml-auto text-xs text-white/50">Synthetic sample opportunity</span>}
         </motion.footer>
       </motion.div>

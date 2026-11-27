@@ -1,0 +1,51 @@
+post_id,athlete_id,body,day_offset,synthetic
+s001,a001,Synthetic training diary: I finished a technique session for football in Delhi.,0,true
+s002,a002,Synthetic training diary: I joined a friendly fixture for cricket in Pune.,-1,true
+s003,a003,Synthetic training diary: I logged a recovery day for basketball in Kochi.,-2,true
+s004,a004,Synthetic training diary: I set a new training goal for athletics in Chennai.,-3,true
+s005,a005,Synthetic training diary: I practised with a district group for basketball in Guwahati.,-4,true
+s006,a006,Synthetic training diary: I finished a technique session for football in Chandigarh.,-5,true
+s007,a007,Synthetic training diary: I joined a friendly fixture for basketball in Mumbai.,-6,true
+s008,a008,Synthetic training diary: I logged a recovery day for basketball in Mumbai.,-7,true
+s009,a009,Synthetic training diary: I set a new training goal for basketball in Kolkata.,-8,true
+s010,a010,Synthetic training diary: I practised with a district group for athletics in Lucknow.,-9,true
+s011,a011,Synthetic training diary: I finished a technique session for cricket in Delhi.,-10,true
+s012,a012,Synthetic training diary: I joined a friendly fixture for badminton in Delhi.,-11,true
+s013,a013,Synthetic training diary: I logged a recovery day for badminton in Kolkata.,-12,true
+s014,a014,Synthetic training diary: I set a new training goal for badminton in Kochi.,-13,true
+s015,a015,Synthetic training diary: I practised with a district group for cricket in Chennai.,-14,true
+s016,a016,Synthetic training diary: I finished a technique session for cricket in Chandigarh.,-15,true
+s017,a017,Synthetic training diary: I joined a friendly fixture for badminton in Pune.,-16,true
+s018,a018,Synthetic training diary: I logged a recovery day for cricket in Bengaluru.,-17,true
+s019,a019,Synthetic training diary: I set a new training goal for basketball in Lucknow.,-18,true
+s020,a020,Synthetic training diary: I practised with a district group for athletics in Mumbai.,-19,true
+s021,a021,Synthetic training diary: I finished a technique session for basketball in Kochi.,-20,true
+s022,a022,Synthetic training diary: I joined a friendly fixture for cricket in Pune.,-21,true
+s023,a023,Synthetic training diary: I logged a recovery day for basketball in Kochi.,-22,true
+s024,a024,Synthetic training diary: I set a new training goal for athletics in Delhi.,-23,true
+s025,a025,Synthetic training diary: I practised with a district group for football in Bengaluru.,-24,true
+s026,a026,Synthetic training diary: I finished a technique session for cricket in Lucknow.,-25,true
+s027,a027,Synthetic training diary: I joined a friendly fixture for basketball in Delhi.,-26,true
+s028,a028,Synthetic training diary: I logged a recovery day for badminton in Chennai.,-27,true
+s029,a029,Synthetic training diary: I set a new training goal for basketball in Guwahati.,-28,true
+s030,a030,Synthetic training diary: I practised with a district group for basketball in Lucknow.,-29,true
+s031,a031,Synthetic training diary: I finished a technique session for cricket in Chennai.,-30,true
+s032,a032,Synthetic training diary: I joined a friendly fixture for basketball in Lucknow.,-31,true
+s033,a033,Synthetic training diary: I logged a recovery day for badminton in Pune.,-32,true
+s034,a034,Synthetic training diary: I set a new training goal for football in Guwahati.,-33,true
+s035,a035,Synthetic training diary: I practised with a district group for football in Guwahati.,-34,true
+s036,a036,Synthetic training diary: I finished a technique session for basketball in Chennai.,-35,true
+s037,a037,Synthetic training diary: I joined a friendly fixture for football in Kochi.,-36,true
+s038,a038,Synthetic training diary: I logged a recovery day for athletics in Bengaluru.,-37,true
+s039,a039,Synthetic training diary: I set a new training goal for basketball in Lucknow.,-38,true
+s040,a040,Synthetic training diary: I practised with a district group for cricket in Guwahati.,-39,true
+s041,a041,Synthetic training diary: I finished a technique session for athletics in Chennai.,-40,true
+s042,a042,Synthetic training diary: I joined a friendly fixture for football in Guwahati.,-41,true
+s043,a043,Synthetic training diary: I logged a recovery day for cricket in Chennai.,-42,true
+s044,a044,Synthetic training diary: I set a new training goal for cricket in Bengaluru.,-43,true
+s045,a045,Synthetic training diary: I practised with a district group for cricket in Guwahati.,-44,true
+s046,a046,Synthetic training diary: I finished a technique session for basketball in Pune.,-45,true
+s047,a047,Synthetic training diary: I joined a friendly fixture for cricket in Kochi.,-46,true
+s048,a048,Synthetic training diary: I logged a recovery day for badminton in Chandigarh.,-47,true
+s049,a049,Synthetic training diary: I set a new training goal for badminton in Chennai.,-48,true
+s050,a050,Synthetic training diary: I practised with a district group for athletics in Bengaluru.,-49,true
